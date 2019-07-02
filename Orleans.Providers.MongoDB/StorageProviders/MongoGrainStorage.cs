@@ -23,6 +23,7 @@ namespace Orleans.Providers.MongoDB.StorageProviders
         private const string FieldId = "_id";
         private const string FieldDoc = "_doc";
         private const string FieldEtag = "_etag";
+        private const string FieldCreatedAt = "_createdAt";
         private readonly MongoDBGrainStorageOptions options;
         private readonly ILogger<MongoGrainStorage> logger;
         private readonly IGrainStateSerializer serializer;
@@ -60,6 +61,12 @@ namespace Orleans.Providers.MongoDB.StorageProviders
                 var client = MongoClientPool.Instance(options.ConnectionString);
 
                 database = client.GetDatabase(options.DatabaseName);
+                foreach(var kv in options.GrainTypesExpirations)
+                {
+                    var collection = database.GetCollection<BsonDocument>(GetFullCollectionName(kv.Key));
+                    var model = new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending(FieldCreatedAt), new CreateIndexOptions { ExpireAfter = kv.Value });
+                    collection.Indexes.CreateOne(model);
+                }
 
                 return Task.CompletedTask;
             });
@@ -94,6 +101,8 @@ namespace Orleans.Providers.MongoDB.StorageProviders
             });
         }
 
+        private bool IsGrainExpirable(string grainType) => options.GrainTypesExpirations.TryGetValue(ShortenGrainType(grainType), out var _);
+
         public Task WriteStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             return DoAndLog(nameof(WriteStateAsync), async () =>
@@ -110,14 +119,19 @@ namespace Orleans.Providers.MongoDB.StorageProviders
 
                 try
                 {
+                    var update = 
+                        Update
+                            .Set(FieldEtag, newETag)
+                            .Set(FieldDoc, newData);
+                            
                     await grainCollection.UpdateOneAsync(
                         Filter.And(
                             Filter.Eq(FieldId, grainKey),
                             Filter.Eq(FieldEtag, grainState.ETag)
                         ),
-                        Update
-                            .Set(FieldEtag, newETag)
-                            .Set(FieldDoc, newData),
+                        IsGrainExpirable(grainType)
+                        ? update.Set(FieldCreatedAt, DateTime.Now) 
+                        : update,
                         Upsert);
                 }
                 catch (MongoWriteException ex)
@@ -170,12 +184,12 @@ namespace Orleans.Providers.MongoDB.StorageProviders
             });
         }
 
-        private IMongoCollection<BsonDocument> GetCollection(string grainType)
-        {
-            var collectionName = options.CollectionPrefix + grainType.Split('.', '+').Last();
+        private string ShortenGrainType(string grainType) => grainType.Split('.', '+').Last();
 
-            return database.GetCollection<BsonDocument>(collectionName);
-        }
+        private string GetFullCollectionName(string grainType) => options.CollectionPrefix + ShortenGrainType(grainType);
+
+        private IMongoCollection<BsonDocument> GetCollection(string grainType) =>
+            database.GetCollection<BsonDocument>(GetFullCollectionName(grainType));
 
         private Task DoAndLog(string actionName, Func<Task> action)
         {
