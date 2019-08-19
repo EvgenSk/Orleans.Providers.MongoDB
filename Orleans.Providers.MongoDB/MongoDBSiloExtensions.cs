@@ -226,7 +226,8 @@ namespace Orleans.Hosting
         public static IServiceCollection AddMongoDBGrainStorage(this IServiceCollection services, string name,
             Action<MongoDBGrainStorageOptions> configureOptions)
         {
-            return services.AddMongoDBGrainStorage(name, ob => ob.Configure(configureOptions));
+            void dummy(MongoDBGrainStorageOptions _) { }
+            return services.AddMongoDBGrainStorage(name, ob => ob.Configure(configureOptions ?? dummy));
         }
 
         /// <summary>
