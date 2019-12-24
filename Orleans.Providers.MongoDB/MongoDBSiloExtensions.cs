@@ -43,6 +43,17 @@ namespace Orleans.Hosting
         }
 
         /// <summary>
+        /// Configure silo to use MongoDb using options.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="configureOptions"></param>
+        /// <returns>Configured builder</returns>
+        public static ISiloBuilder UseMongoDBClient(this ISiloBuilder builder, Action<MongoDBOptions> configureOptions = null)
+        {
+            return builder.ConfigureServices(services => services.AddMongoDBClient(configureOptions));
+        }
+
+        /// <summary>
         /// Configure ISiloHostBuilder to use MongoReminderTable.
         /// </summary>
         public static ISiloHostBuilder UseMongoDBReminders(this ISiloHostBuilder builder,
@@ -244,7 +255,8 @@ namespace Orleans.Hosting
         public static IServiceCollection AddMongoDBGrainStorage(this IServiceCollection services, string name,
             Action<MongoDBGrainStorageOptions> configureOptions)
         {
-            return services.AddMongoDBGrainStorage(name, ob => ob.Configure(configureOptions));
+            void dummy(MongoDBGrainStorageOptions _) { }
+            return services.AddMongoDBGrainStorage(name, ob => ob.Configure(configureOptions ?? dummy));
         }
 
         /// <summary>

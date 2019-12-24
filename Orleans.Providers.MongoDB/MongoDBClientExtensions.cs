@@ -26,6 +26,17 @@ namespace Orleans
         }
 
         /// <summary>
+        /// Configure silo to use MongoDb using options.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="configureOptions"></param>
+        /// <returns>Configured builder</returns>
+        public static IClientBuilder UseMongoDBClient(this IClientBuilder builder, Action<MongoDBOptions> configureOptions = null)
+        {
+            return builder.ConfigureServices(services => services.AddMongoDBClient(configureOptions));
+        }
+
+        /// <summary>
         /// Configure client to use MongoGatewayListProvider
         /// </summary>
         public static IClientBuilder UseMongoDBClustering(this IClientBuilder builder,

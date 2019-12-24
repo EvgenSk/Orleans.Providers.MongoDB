@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
@@ -35,11 +36,11 @@ namespace Orleans.Providers.MongoDB.StorageProviders
             IMongoClientFactory mongoClientFactory,
             ILogger<MongoGrainStorage> logger,
             IGrainStateSerializer serializer,
-            MongoDBGrainStorageOptions options)
+            IOptions<MongoDBGrainStorageOptions> options)
         {
-            this.mongoClient = mongoClientFactory.Create(options, "Storage");
+            this.mongoClient = mongoClientFactory.Create(options.Value, "Storage");
             this.logger = logger;
-            this.options = options;
+            this.options = options.Value;
             this.serializer = serializer;
         }
 

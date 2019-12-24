@@ -1,4 +1,5 @@
-﻿using Orleans.Runtime;
+﻿using Microsoft.Extensions.Options;
+using Orleans.Runtime;
 
 // ReSharper disable InvertIf
 
@@ -7,8 +8,13 @@ namespace Orleans.Providers.MongoDB.Configuration
     /// <summary>
     /// Options to configure MongoDB for Orleans
     /// </summary>
-    public class MongoDBOptions
+    public class MongoDBOptions: IOptions<MongoDBOptions>
     {
+        /// <summary>
+        /// Connection string for MongoClient
+        /// </summary>
+        public string ConnectionString { get; set; }
+
         /// <summary>
         /// Database name.
         /// </summary>
@@ -28,6 +34,8 @@ namespace Orleans.Providers.MongoDB.Configuration
         /// True, to create a shard key when using with cosmos db.
         /// </summary>
         public bool CreateShardKeyForCosmos { get; set; }
+
+        MongoDBOptions IOptions<MongoDBOptions>.Value => this;
 
         internal void Validate(string name = null)
         {
