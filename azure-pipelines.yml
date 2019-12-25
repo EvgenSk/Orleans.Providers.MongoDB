@@ -26,14 +26,14 @@ steps:
   displayName: 'Build the project - $(buildConfiguration)'
   inputs:
     command: build
-    projects: '**/*.csproj'
+    projects: '**/Orleans.Providers.MongoDB.csproj'
     arguments: '--no-restore --configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
   displayName: 'Pack the project - $(buildConfiguration)'
   inputs:
     command: 'pack'
-    packagesToPack: '**/*.csproj'
+    packagesToPack: '**/Orleans.Providers.MongoDB.csproj'
     arguments: '--configuration $(buildConfiguration)'
     versioningScheme: byPrereleaseNumber
     majorVersion: '$(major)'
